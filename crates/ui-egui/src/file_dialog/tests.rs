@@ -88,6 +88,43 @@ fn layered_filename_only_save_defaults_to_psd() {
 }
 
 #[test]
+fn browser_fresh_save_offers_native_project_and_cancel_preserves_work() {
+    let (mut app, open, written) = app();
+    app.services.write_unconfirmed = true;
+    app.run("layer.new.layer", json!({})).unwrap();
+    let before = app.session.active().map(|d| (d.doc.id, d.path.clone(), d.revision, d.saved_revision, d.doc.layers.len()));
+    let ctx = egui::Context::default();
+    menus::invoke(&mut app, &ctx, "file.saveAs", json!({})).unwrap();
+    app.poll_file_dialog(&ctx, None);
+    assert!(matches!(open.borrow().as_slice(), [(FileDialogRequest::Save { suggested }, _)] if suggested.ends_with(".pcraft")));
+    answer(&open, None);
+    app.poll_file_dialog(&ctx, None);
+    assert!(written.borrow().is_empty());
+    assert_eq!(app.session.active().map(|d| (d.doc.id, d.path.clone(), d.revision, d.saved_revision, d.doc.layers.len())), before);
+}
+
+#[test]
+fn browser_save_as_keeps_existing_layered_format_and_download_is_unconfirmed() {
+    let ctx = egui::Context::default();
+    for format in ["psd", "psb", "pcraft"] {
+        let (mut app, open, written) = app();
+        app.services.write_unconfirmed = true;
+        app.run("layer.new.layer", json!({})).unwrap();
+        let path = format!("Existing.{format}");
+        app.session.active_mut().unwrap().path = Some(path.clone());
+        let previous = app.session.active().unwrap().saved_revision;
+        menus::invoke(&mut app, &ctx, "file.saveAs", json!({})).unwrap();
+        app.poll_file_dialog(&ctx, None);
+        assert!(matches!(open.borrow().as_slice(), [(FileDialogRequest::Save { suggested }, _)] if suggested == &path));
+        answer(&open, Some(FileDialogAnswer::SaveTo(path.clone())));
+        app.poll_file_dialog(&ctx, None);
+        assert_eq!(*written.borrow(), [path]);
+        assert_eq!(app.session.active().unwrap().saved_revision, previous, "a browser download does not acknowledge a confirmed disk save");
+        assert!(app.session.active().unwrap().is_dirty());
+    }
+}
+
+#[test]
 fn save_dialog_preserves_flat_and_existing_layered_format_defaults() {
     let ctx = egui::Context::default();
     for (path, layered) in [

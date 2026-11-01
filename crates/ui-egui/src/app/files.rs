@@ -196,9 +196,15 @@ impl PhotocraftApp {
             Some(p) if writable => p.clone(),
             p => {
                 let source = p.as_deref().unwrap_or(&st.doc.name);
-                let ext = match photocraft_engine::file_cmds::extension(source).as_deref() {
+                let source_ext = photocraft_engine::file_cmds::extension(source);
+                let ext = match source_ext.as_deref() {
                     Some("pdn") => "pcraft",
                     Some("kra" | "krz") => "ora",
+                    // Browser picks supply bytes rather than filesystem paths. Keep an
+                    // opened layered file's format; offer our lossless native project for
+                    // a fresh browser document instead of making PSD the only save choice.
+                    Some(ext @ ("pcraft" | "psd" | "psb" | "tif" | "tiff")) if self.services.write_unconfirmed => ext,
+                    _ if self.services.write_unconfirmed && st.path.is_none() => "pcraft",
                     _ => "psd",
                 };
                 std::path::Path::new(source).with_extension(ext).to_string_lossy().into_owned()

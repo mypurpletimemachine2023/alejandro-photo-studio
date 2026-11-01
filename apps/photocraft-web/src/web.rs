@@ -446,10 +446,27 @@ fn services(inbox: Inbox, place_inbox: Inbox, cursor_pos: photocraft_ui_egui::Cu
             }),
             // Browser folder handles cannot be represented as filesystem paths for engine commands.
             FileDialogRequest::Folder { .. } => reply.send(None),
-            // No save dialog on the web: the suggested name becomes the download name.
+            // The browser has no filesystem save panel. Let the user name the download and
+            // choose its supported extension, rather than silently forcing the suggested PSD.
+            // Cancel never writes, and the download remains unconfirmed below.
             FileDialogRequest::Save { suggested } => {
                 let name = std::path::Path::new(&suggested).file_name().map_or_else(|| suggested.clone(), |n| n.to_string_lossy().to_string());
-                reply.send(Some(FileDialogAnswer::SaveTo(name)));
+                let answer = web_sys::window()
+                    .ok_or_else(|| "The browser window is unavailable.".to_string())
+                    .and_then(|window| {
+                        window
+                            .prompt_with_message_and_default(
+                                "ACA Photo Studio — Save project filename (.pcraft keeps editable project data; other supported extensions are allowed)",
+                                &name,
+                            )
+                            .map_err(|error| format!("The browser could not show the filename prompt: {error:?}"))
+                    })
+                    .and_then(|answer| crate::save_name::chosen(answer.as_deref()).map_err(str::to_string));
+                reply.send(match answer {
+                    Ok(Some(name)) => Some(FileDialogAnswer::SaveTo(name)),
+                    Ok(None) => None,
+                    Err(error) => Some(FileDialogAnswer::Unavailable(error)),
+                });
             }
         })),
         write: Some(Box::new(|path: &str, bytes: &[u8]| download(path, bytes))),
