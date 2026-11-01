@@ -11,3 +11,8 @@ target/
 /craft-fonts
 *.log
 __pycache__/
+
+# Local Academy build evidence and one-time transformation helpers
+/aca-*.log
+/aca-*.py
+/ACA_FORK_FINGERPRINTS.json

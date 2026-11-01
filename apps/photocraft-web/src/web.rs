@@ -81,7 +81,7 @@ pub fn start() {
                 options,
                 Box::new(move |cc| {
                     PhotocraftApp::install_type_reset_hooks(&cc.egui_ctx);
-                    PhotocraftApp::setup_context(&cc.egui_ctx, ThemeKind::Pro);
+                    PhotocraftApp::setup_context(&cc.egui_ctx, ThemeKind::Academy);
                     let inbox: Inbox = Arc::default();
                     let place_inbox: Inbox = Arc::default();
                     let served: Served = Arc::default();
@@ -94,7 +94,7 @@ pub fn start() {
                         photocraft_ui_egui::notices::post(&mut app, i18n::t("Some brush presets could not be loaded"), preset_warnings, true, None);
                     }
                     listen_pen(&pen_target, app.stylus.feed.clone());
-                    app.set_theme(&cc.egui_ctx, ThemeKind::Pro);
+                    app.set_theme(&cc.egui_ctx, ThemeKind::Academy);
                     if let Some(rs) = cc.wgpu_render_state.clone()
                         && !force_cpu
                     {
@@ -110,7 +110,7 @@ pub fn start() {
         if let Some(el) = document.get_element_by_id("photocraft_loading") {
             match result {
                 Ok(()) => el.remove(),
-                Err(e) => el.set_inner_html(&format!("<p>PhotoCraft failed to start: {e:?}</p><p>A browser with WebGPU or WebGL2 is required.</p>")),
+                Err(e) => el.set_inner_html(&format!("<p>ACA Photo Studio failed to start: {e:?}</p><p>A browser with WebGPU or WebGL2 is required.</p>")),
             }
         }
     });

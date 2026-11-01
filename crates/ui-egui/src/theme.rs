@@ -25,6 +25,8 @@ use std::sync::Arc;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ThemeKind {
+    /// ALEJANDRO Creative Academy purple surfaces and gold accents.
+    Academy,
     /// Photoshop-style Spectrum dark: flat charcoal panels, tab strips, blue accents (darkest brightness).
     Pro,
     /// Photoshop's default (second) interface brightness: #535353 panels, #282828 canvas (default).
@@ -55,7 +57,8 @@ pub enum ThemeKind {
 }
 
 impl ThemeKind {
-    pub const ALL: [ThemeKind; 14] = [
+    pub const ALL: [ThemeKind; 15] = [
+        ThemeKind::Academy,
         ThemeKind::Pro,
         ThemeKind::ProMedium,
         ThemeKind::ProLightGray,
@@ -73,6 +76,7 @@ impl ThemeKind {
     ];
     pub fn label(self) -> &'static str {
         match self {
+            ThemeKind::Academy => "Academy Purple & Gold",
             ThemeKind::Pro => "Pro (Dark)",
             ThemeKind::ProMedium => "Pro (Medium Gray)",
             ThemeKind::ProLightGray => "Pro (Light Gray)",
@@ -93,6 +97,7 @@ impl ThemeKind {
     /// `window.theme.<id>`.
     pub fn id(self) -> &'static str {
         match self {
+            ThemeKind::Academy => "academy",
             ThemeKind::Pro => "pro",
             ThemeKind::ProMedium => "proMedium",
             ThemeKind::ProLightGray => "proLightGray",
@@ -117,7 +122,8 @@ impl ThemeKind {
     pub fn is_dark(self) -> bool {
         matches!(
             self,
-            ThemeKind::Studio
+            ThemeKind::Academy
+                | ThemeKind::Studio
                 | ThemeKind::Pro
                 | ThemeKind::ProMedium
                 | ThemeKind::SolarizedDark
@@ -136,6 +142,7 @@ impl ThemeKind {
     }
     pub fn from_name(s: &str) -> Option<Self> {
         match s.to_ascii_lowercase().replace([' ', '_', '-', '(', ')'], "").as_str() {
+            "academy" | "academypurple&gold" | "academypurplegold" | "acapurplegold" => Some(ThemeKind::Academy),
             "pro" | "prodark" | "photoshop" | "dark" => Some(ThemeKind::Pro),
             "promedium" | "promediumgray" | "medium" | "mediumgray" => Some(ThemeKind::ProMedium),
             "prolightgray" | "lightgray" | "mediumlight" => Some(ThemeKind::ProLightGray),
@@ -221,6 +228,34 @@ impl Tokens {
 
     pub fn for_kind(kind: ThemeKind) -> Self {
         match kind {
+            ThemeKind::Academy => {
+                let mut t = Self::for_kind(ThemeKind::Studio);
+                t.kind = kind;
+                t.chrome = Color32::from_rgb(30, 18, 43);
+                t.canvas = Color32::from_rgb(25, 16, 34);
+                t.canvas_dot = Color32::from_rgb(54, 34, 69);
+                t.dock = Color32::from_rgb(37, 24, 49);
+                t.card = Color32::from_rgb(47, 31, 62);
+                t.card_border = Color32::from_rgb(104, 78, 130);
+                t.field = Color32::from_rgb(27, 17, 37);
+                t.field_border = Color32::from_rgb(123, 94, 148);
+                t.hover = Color32::from_rgb(72, 45, 94);
+                t.pressed = Color32::from_rgb(98, 64, 128);
+                t.text = Color32::from_rgb(246, 236, 218);
+                t.text_dim = Color32::from_rgb(207, 189, 219);
+                t.text_faint = Color32::from_rgb(172, 151, 188);
+                t.icon = Color32::from_rgb(228, 216, 235);
+                t.accent = Color32::from_rgb(224, 190, 99);
+                t.accent_soft = Color32::from_rgba_unmultiplied(224, 190, 99, 36);
+                t.accent_border = Color32::from_rgb(173, 139, 64);
+                t.accent_text = Color32::from_rgb(245, 218, 145);
+                t.primary_bg = Color32::from_rgb(129, 91, 20);
+                t.primary_text = Color32::WHITE;
+                t.separator = Color32::from_rgb(83, 55, 102);
+                t.tab_strip = t.chrome;
+                t.row_selected = Color32::from_rgb(85, 55, 111);
+                t
+            }
             // Sampled from Photoshop 2026's default brightness (raw display values).
             ThemeKind::ProMedium => Tokens {
                 kind,

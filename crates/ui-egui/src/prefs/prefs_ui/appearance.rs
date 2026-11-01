@@ -49,6 +49,7 @@ pub(super) fn selected_theme(interface: &prefs::Interface, system: Option<egui::
         }
     } else {
         match interface.dark_theme {
+            DarkTheme::Academy => ThemeKind::Academy,
             DarkTheme::Pro => ThemeKind::Pro,
             DarkTheme::ProMedium => ThemeKind::ProMedium,
             DarkTheme::Studio => ThemeKind::Studio,
@@ -107,6 +108,7 @@ pub(super) const LIGHT_THEME_OPTIONS: &[(&str, ThemeKind)] = &[
 ];
 
 pub(super) const DARK_THEME_OPTIONS: &[(&str, ThemeKind)] = &[
+    ("academy", ThemeKind::Academy),
     ("proMedium", ThemeKind::ProMedium),
     ("pro", ThemeKind::Pro),
     ("studio", ThemeKind::Studio),

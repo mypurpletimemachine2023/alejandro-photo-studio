@@ -1,0 +1,76 @@
+name: Academy browser build
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Install pinned formatter
+        run: rustup toolchain install 1.95.0 --profile minimal --component rustfmt
+      - name: Format and license preservation
+        env:
+          RUSTUP_TOOLCHAIN: 1.95.0
+        run: |
+          cargo fmt --all -- --check
+          git diff --check HEAD^ HEAD
+          git diff --exit-code HEAD^ HEAD -- LICENSE-MIT LICENSE-APACHE
+  build-web:
+    needs: source-audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      RUSTUP_TOOLCHAIN: 1.95.0
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_RELEASE_DEBUG: 0
+      CARGO_PROFILE_RELEASE_LTO: 'false'
+      CARGO_PROFILE_RELEASE_CODEGEN_UNITS: 16
+      CARGO_PROFILE_RELEASE_OPT_LEVEL: s
+      TRUNK_TOOLS_WASM_BINDGEN: 0.2.129
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Rust and WASM target
+        run: rustup toolchain install 1.95.0 --profile minimal --target wasm32-unknown-unknown
+      - name: Install official browser build tools
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP"
+          curl -fsSLO https://github.com/trunk-rs/trunk/releases/download/v0.22.1/trunk-x86_64-unknown-linux-gnu.tar.gz
+          curl -fsSLO https://github.com/trunk-rs/trunk/releases/download/v0.22.1/trunk-x86_64-unknown-linux-gnu.tar.gz.sha256
+          sha256sum -c trunk-x86_64-unknown-linux-gnu.tar.gz.sha256
+          mkdir trunk-tool
+          tar -xzf trunk-x86_64-unknown-linux-gnu.tar.gz -C trunk-tool
+          curl -fsSLO https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.129/wasm-bindgen-0.2.129-x86_64-unknown-linux-musl.tar.gz
+          tar -xzf wasm-bindgen-0.2.129-x86_64-unknown-linux-musl.tar.gz
+          printf '%s\n' "$RUNNER_TEMP/trunk-tool" "$RUNNER_TEMP/wasm-bindgen-0.2.129-x86_64-unknown-linux-musl" >> "$GITHUB_PATH"
+      - name: Build actual Rust browser application
+        working-directory: apps/photocraft-web
+        run: trunk build --release --skip-version-check
+      - name: Verify packaged browser and notices
+        shell: bash
+        run: |
+          test -s dist/web/index.html
+          test -s dist/web/licenses/LICENSE-MIT
+          test -s dist/web/licenses/LICENSE-APACHE
+          test -s dist/web/licenses/NOTICE
+          find dist/web -type f -name '*.wasm' -size +100k | grep .
+          git diff --exit-code -- Cargo.lock
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,subprocess
+          p=Path('dist/web')
+          data={'app':'photocraft','brand':'ALEJANDRO Creative Academy','sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'files':[{'path':str(f.relative_to(p)),'bytes':f.stat().st_size,'sha256':hashlib.sha256(f.read_bytes()).hexdigest()} for f in sorted(p.rglob('*')) if f.is_file()]}
+          (p/'ACA_BUILD_INFO.json').write_text(json.dumps(data,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: academy-web
+          path: dist/web
+          if-no-files-found: error
+          retention-days: 7

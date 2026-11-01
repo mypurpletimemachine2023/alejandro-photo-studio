@@ -81,7 +81,7 @@ fn saved_ui_font_size_survives_first_frame_install() {
     let mut width = 0.0;
     ctx.run_ui(Default::default(), |ui| {
         assert!(medium_bound(ui.ctx()), "the installed stack reaches the second pass");
-        width = ui.painter().layout_no_wrap("PhotoCraft".into(), medium(13.0), Color32::WHITE).size().x;
+        width = ui.painter().layout_no_wrap("ACA Photo Studio".into(), medium(13.0), Color32::WHITE).size().x;
     })
     .textures_delta
     .clear();
@@ -91,7 +91,7 @@ fn saved_ui_font_size_survives_first_frame_install() {
     let mut scaled = 0.0;
     ctx.run_ui(Default::default(), |ui| {
         assert!(medium_bound(ui.ctx()));
-        scaled = ui.painter().layout_no_wrap("PhotoCraft".into(), medium(13.0), Color32::WHITE).size().x;
+        scaled = ui.painter().layout_no_wrap("ACA Photo Studio".into(), medium(13.0), Color32::WHITE).size().x;
     })
     .textures_delta
     .clear();
@@ -101,7 +101,7 @@ fn saved_ui_font_size_survives_first_frame_install() {
     for _ in 0..2 {
         ctx.run_ui(Default::default(), |ui| {
             assert!(medium_bound(ui.ctx()));
-            let w = ui.painter().layout_no_wrap("PhotoCraft".into(), medium(13.0), Color32::WHITE).size().x;
+            let w = ui.painter().layout_no_wrap("ACA Photo Studio".into(), medium(13.0), Color32::WHITE).size().x;
             assert!((w - scaled).abs() < 1.0, "{w} vs {scaled}");
         })
         .textures_delta
@@ -361,4 +361,15 @@ fn breeze_themes_parse_and_meet_text_contrast() {
         }
         assert!(contrast(t.caption_close_text, t.caption_close) >= 4.5, "{kind:?}: close button glyph");
     }
+}
+
+#[test]
+fn academy_palette_is_dark_purple_gold_and_parseable() {
+    let t = Tokens::for_kind(ThemeKind::Academy);
+    assert!(t.dark());
+    assert_eq!(ThemeKind::from_name("academy"), Some(ThemeKind::Academy));
+    assert_eq!(ThemeKind::from_name(ThemeKind::Academy.label()), Some(ThemeKind::Academy));
+    assert_eq!(t.chrome, Color32::from_rgb(30, 18, 43));
+    assert_eq!(t.accent, Color32::from_rgb(224, 190, 99));
+    assert!(t.text.r() > t.card.r() + 100);
 }

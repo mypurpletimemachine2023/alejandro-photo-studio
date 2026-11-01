@@ -1065,3 +1065,15 @@ fn the_web_build_caps_memory_usage() {
         assert_eq!(honoured_memory_usage_mb(stored, false), stored, "desktop, {stored} MB");
     }
 }
+
+#[test]
+fn academy_theme_records_a_valid_dark_preference_without_altering_documents() {
+    let mut session = crate::Session::new();
+    session.execute("prefs.set", serde_json::json!({"path":"interface.theme","value":"academy"})).unwrap();
+    assert_eq!(session.prefs().interface.dark_theme, super::DarkTheme::Academy);
+    assert_eq!(session.prefs().interface.appearance_mode, super::AppearanceMode::Dark);
+    let json = session.prefs_to_json();
+    let mut reopened = crate::Session::new();
+    reopened.load_prefs_json(&json).unwrap();
+    assert_eq!(reopened.prefs().interface.dark_theme, super::DarkTheme::Academy);
+}

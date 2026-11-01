@@ -96,6 +96,7 @@ pub(super) fn humanize(key: &str) -> String {
 
 pub(super) fn choice_label(v: &str) -> String {
     match v {
+        "academy" => "Academy Purple & Gold".into(),
         "exr" => "EXR".into(),
         "cm" => "Centimeters".into(),
         "mm" => "Millimeters".into(),

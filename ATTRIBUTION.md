@@ -148,3 +148,10 @@ are adapted from Skyfuller1303’s MIT OR Apache-2.0 implementation in
 `897f20072762fdf0eb688adcdb8d8cda7b38ce66`. Don Omondi’s embedded AI/PDF/EPS
 extension and current-main integration build on that source. Clipboard and unrelated
 Shape Tools changes from that branch are not included.
+
+## Academy fork artwork
+
+| Path | Author | Source | License | Notes |
+|---|---|---|---|---|
+| `apps/photocraft-web/aca-mark.svg` | Alejandro Creative Academy | Original geometric crown/A mark authored for this fork | MIT OR Apache-2.0 | Replaces upstream product icon; no ArtCraft trademark logo used |
+| `crates/ui-egui/src/panels/brand.rs` | Alejandro Creative Academy | Original procedural crown/A pixel mark | MIT OR Apache-2.0 | Application chrome and About mark |
