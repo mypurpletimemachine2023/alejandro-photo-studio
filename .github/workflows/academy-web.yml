@@ -43,7 +43,14 @@ jobs:
           cd "$RUNNER_TEMP"
           curl -fsSLO https://github.com/trunk-rs/trunk/releases/download/v0.22.1/trunk-x86_64-unknown-linux-gnu.tar.gz
           curl -fsSLO https://github.com/trunk-rs/trunk/releases/download/v0.22.1/trunk-x86_64-unknown-linux-gnu.tar.gz.sha256
-          sha256sum -c trunk-x86_64-unknown-linux-gnu.tar.gz.sha256
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,re
+          archive=Path('trunk-x86_64-unknown-linux-gnu.tar.gz')
+          expected=Path(str(archive)+'.sha256').read_text(encoding='utf-8-sig').split()[0]
+          assert re.fullmatch('[0-9a-fA-F]{64}',expected),'Invalid upstream checksum'
+          assert hashlib.sha256(archive.read_bytes()).hexdigest()==expected.lower(),'Trunk checksum mismatch'
+          PY
           mkdir trunk-tool
           tar -xzf trunk-x86_64-unknown-linux-gnu.tar.gz -C trunk-tool
           curl -fsSLO https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.129/wasm-bindgen-0.2.129-x86_64-unknown-linux-musl.tar.gz
