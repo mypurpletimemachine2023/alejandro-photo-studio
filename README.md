@@ -1,3 +1,16 @@
+# ACA Photo Studio
+
+**ALEJANDRO Creative Academy browser edition.** This is a genuine source fork of [Storytold/photocraft](https://github.com/storytold/photocraft), with an original Academy crown/A mark, purple-and-gold interface and compatible upstream document formats. Original contributors, copyright and license notices are retained. The upstream ArtCraft team does not endorse this fork.
+
+- Fork details and pinned upstream revision: [ACA_FORK.md](ACA_FORK.md).
+- Real browser build: manually run [Academy browser build](https://github.com/mypurpletimemachine2023/alejandro-photo-studio/actions/workflows/academy-web.yml). A successful run uploads `academy-web` containing the compiled Rust/WebAssembly app, licenses and source fingerprints.
+- Runs are manual only, on standard public Ubuntu runners; this repository does not publish a website automatically.
+- Website integration and browser playtesting are separate gates. A source fork or successful compile alone does not certify every upstream feature.
+
+## Upstream documentation
+
+The following is the original project's documentation and status, retained as upstream context rather than a new Academy certification.
+
 <p align="center">
   <a href="https://getartcraft.com/">
     <picture>
