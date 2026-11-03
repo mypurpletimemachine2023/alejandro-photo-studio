@@ -26,6 +26,8 @@ macro_rules! tl {
 }
 mod brush_mode_menu;
 pub mod canvas;
+mod compact;
+mod compact_policy;
 pub mod control;
 pub mod dialogs;
 pub mod dock;
@@ -335,6 +337,7 @@ type InfoSampleKey = (i32, i32, u64, u32);
 pub struct PhotocraftApp {
     pub session: Session,
     pub ui: UiState,
+    pub(crate) compact: compact::Runtime,
     pub services: Services,
     /// Canvas caches per (document, display): CPU textures hold monitor values; the GPU
     /// canvas state is shared (`canvas::GPU_OUTPUT`).

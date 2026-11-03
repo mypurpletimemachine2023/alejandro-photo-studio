@@ -270,43 +270,52 @@ impl PhotocraftApp {
         // The OS title bar (and the taskbar / Alt-Tab entry) follows the active file; with the
         // system title bar this is where the document name lives, as the in-app title is hidden.
         panels::sync_window_title(self, &ctx);
+        crate::compact::prepare(self, &ctx);
         let chrome = !self.ui.view.hides_chrome();
         if chrome {
             self.ui.panels.full_screen_chrome = false;
         }
         // In Full Screen Mode, Tab shows the menu bar, options bar, toolbar and dock (#6760).
         let tabbed_in = !chrome && self.ui.panels.full_screen_chrome;
-        if (chrome || tabbed_in) && self.ui.panels.menu_bar {
-            panels::title_bar(self, ui);
-        }
-        if (chrome && self.ui.panels.options_bar) || tabbed_in {
-            panels::options_bar(self, ui);
-        }
-        if chrome && self.ui.panels.status_bar {
-            panels::status_bar(self, ui);
-        }
-        if (chrome && self.ui.panels.toolbar) || tabbed_in {
-            panels::toolbar(self, ui);
-        }
-        // craft-ui's layout holds the canvas as its protected `canvas` panel.
-        let docking = (chrome && self.ui.panels.dock) || tabbed_in;
-        if docking {
-            panels::dock_area(self, ui);
+        if self.compact.active {
+            crate::compact::show(self, ui);
         } else {
-            let t = theme::Tokens::get(&ctx);
-            let backdrop = if chrome { prefs_ui::pasteboard_color(self).unwrap_or(t.canvas) } else { egui::Color32::BLACK };
-            egui::CentralPanel::default().frame(egui::Frame::NONE.fill(backdrop)).show(ui, |ui| {
-                canvas::document_area(self, ui);
-            });
-            panels::properties_window(self, &ctx);
+            if (chrome || tabbed_in) && self.ui.panels.menu_bar {
+                panels::title_bar(self, ui);
+            }
+            if (chrome && self.ui.panels.options_bar) || tabbed_in {
+                panels::options_bar(self, ui);
+            }
+            if chrome && self.ui.panels.status_bar {
+                panels::status_bar(self, ui);
+            }
+            if (chrome && self.ui.panels.toolbar) || tabbed_in {
+                panels::toolbar(self, ui);
+            }
+            // craft-ui's layout holds the canvas as its protected `canvas` panel.
+            let docking = (chrome && self.ui.panels.dock) || tabbed_in;
+            if docking {
+                panels::dock_area(self, ui);
+            } else {
+                let t = theme::Tokens::get(&ctx);
+                let backdrop = if chrome { prefs_ui::pasteboard_color(self).unwrap_or(t.canvas) } else { egui::Color32::BLACK };
+                egui::CentralPanel::default().frame(egui::Frame::NONE.fill(backdrop)).show(ui, |ui| {
+                    canvas::document_area(self, ui);
+                });
+                panels::properties_window(self, &ctx);
+            }
+            crate::compact::desktop_controls(self, &ctx);
         }
-        brush_panel::window(self, &ctx);
-        preset_panels::windows(self, &ctx);
-        gradient_ui::editor_window(self, &ctx);
-        type_panels_ui::windows(self, &ctx);
-        analysis_ui::windows(self, &ctx);
-        timeline_ui::windows(self, &ctx);
-        workspace_ui::windows(self, &ctx);
+        if !self.compact.active {
+            // Keep desktop floating-panel choices intact while projecting the compact canvas.
+            brush_panel::window(self, &ctx);
+            preset_panels::windows(self, &ctx);
+            gradient_ui::editor_window(self, &ctx);
+            type_panels_ui::windows(self, &ctx);
+            analysis_ui::windows(self, &ctx);
+            timeline_ui::windows(self, &ctx);
+            workspace_ui::windows(self, &ctx);
+        }
         palette::show(self, &ctx);
         dialogs::show(self, &ctx);
         layers_panel_ui::show_dialog(self, &ctx);

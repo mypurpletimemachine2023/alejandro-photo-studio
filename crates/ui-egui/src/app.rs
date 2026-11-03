@@ -37,6 +37,7 @@ impl PhotocraftApp {
         let mut app = Self {
             session,
             ui: UiState::default(),
+            compact: Default::default(),
             services,
             canvases: HashMap::new(),
             navigator_textures: HashMap::new(),

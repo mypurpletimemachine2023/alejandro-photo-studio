@@ -1,15 +1,21 @@
 //! Narrow Academy appearance queue: presentation only, never an editor command.
-use std::cell::Cell;
-#[cfg(target_arch = "wasm32")]
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 thread_local! {
+    static LAYOUT: RefCell<String> = const { RefCell::new(String::new()) };
     #[cfg(target_arch = "wasm32")]
     static CONTEXT: RefCell<Option<egui::Context>> = const { RefCell::new(None) };
     static PENDING: Cell<Option<bool>> = const { Cell::new(None) };
     static READY: Cell<bool> = const { Cell::new(false) };
     static CURRENT: Cell<bool> = const { Cell::new(false) };
+}
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen(js_name = academyLayoutState))]
+pub fn academy_layout_state() -> String {
+    LAYOUT.with(|s| s.borrow().clone())
+}
+pub(crate) fn applied_layout(state: String) {
+    LAYOUT.with(|s| *s.borrow_mut() = state);
 }
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen(js_name = academyTheme))]
 pub fn academy_theme(light: bool) {

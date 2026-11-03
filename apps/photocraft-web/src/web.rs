@@ -347,6 +347,16 @@ impl eframe::App for WebShell {
     }
 
     fn logic(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        if self.app.compact_layout_needs_init() {
+            let stored = local_storage().and_then(|s| s.get_item("aca.photo.layout.v1").ok().flatten());
+            self.app.initialize_compact_layout(stored.as_deref());
+        }
+        if let Some(value) = self.app.take_compact_layout_change()
+            && let Some(storage) = local_storage()
+            && let Err(e) = storage.set_item("aca.photo.layout.v1", value)
+        {
+            log::warn!("Layout preference could not be saved: {e:?}");
+        }
         crate::academy::attach(ctx);
         if let Some(light) = crate::academy::take() {
             self.app.set_theme(ctx, if light { ThemeKind::StudioLight } else { ThemeKind::Academy });
@@ -406,6 +416,7 @@ impl eframe::App for WebShell {
             });
         }
         self.app.ui_frame(ui, frame);
+        crate::academy::applied_layout(self.app.compact_layout_state());
         self.save_presets(ui.ctx());
         self.app.finish_type_reset_pass(ui.ctx());
     }

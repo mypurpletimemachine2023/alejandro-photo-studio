@@ -571,7 +571,7 @@ fn update_canvas_navigation(app: &mut PhotocraftApp, view: &mut View, input: Can
     // General › Animated Zoom: the wheel zoom eases over the frames of a notch, or is one instant step.
     // Enhanced Controls › Enable Gestures off: two fingers on a touch screen neither zoom nor
     // turn the view (#204); the mouse and trackpad are unaffected.
-    let touch_gestures = app.session.prefs().enhanced_controls.touch_gestures;
+    let touch_gestures = app.session.prefs().enhanced_controls.touch_gestures || app.compact.active;
     let wheel = crate::wheel_nav::read_with(
         input.ctx,
         app.session.prefs().general.zoom_with_scroll_wheel,
@@ -583,6 +583,16 @@ fn update_canvas_navigation(app: &mut PhotocraftApp, view: &mut View, input: Can
         touch_gestures,
     );
     if nav_hovered {
+        if crate::compact::blocked(app)
+            && touch_gestures
+            && let Some(pan) = input.ctx.input(|i| i.multi_touch().map(|t| t.translation_delta))
+        {
+            let d = input.xf.unmap_vec(pan) / (view.zoom / input.ppp);
+            if d.is_finite() {
+                view.center[0] -= d.x;
+                view.center[1] -= d.y;
+            }
+        }
         let pointer = input.ctx.input(|i| i.pointer.hover_pos());
         match (wheel, pointer) {
             (Some(crate::wheel_nav::Wheel::Zoom(f)), Some(p)) => {
@@ -1911,6 +1921,7 @@ pub fn canvas_view(app: &mut PhotocraftApp, ui: &mut egui::Ui, idx: usize, rect:
     let tool = match temporary {
         Some(t) => t.tool(),
         None if middle => Tool::Hand,
+        None if crate::compact::navigating(app) => Tool::Hand,
         None => app.ui.tool,
     };
     // ⌘ held: this frame's gestures go to the Move tool (`PhotocraftApp::active_tool`). The Hand
@@ -1951,8 +1962,8 @@ pub fn canvas_view(app: &mut PhotocraftApp, ui: &mut egui::Ui, idx: usize, rect:
     // owns the pointer, so the tool behind it cannot steal the resize drag (#2302). The held Hand
     // (Space) and a middle-button drag still pan, and a secondary window's Hand never stops, as the
     // box is only drawn and driven on the primary canvas.
-    let transform_owns_pointer = primary && app.ui.transform.is_some() && temporary.is_none() && !middle;
-    let hand_pan = tool == Tool::Hand && !transform_owns_pointer;
+    let transform_owns_pointer = primary && app.ui.transform.is_some() && temporary.is_none() && !middle && !crate::compact::navigating(app);
+    let hand_pan = tool == Tool::Hand && !transform_owns_pointer && !crate::compact::blocked(app);
     // Preferences › Tools › Enable Flick Panning: a Hand drag let go while moving glides on.
     let flick_id = egui::Id::unique(("pc-flick-pan", idx, primary, ctx.viewport_id()));
     let flick_on = app.session.prefs().tools.enable_flick_panning;
@@ -1975,9 +1986,9 @@ pub fn canvas_view(app: &mut PhotocraftApp, ui: &mut egui::Ui, idx: usize, rect:
         view.center[1] -= d.y;
         // The tool cursors below are skipped while panning: the fist is set here (#2196).
         ctx.set_cursor_icon(crate::tool_cursor::hand(&ctx, true));
-    } else if primary && !stroke_dismissal && temporary.is_none() && !middle && crate::layer_picker::armed(app).is_some() {
+    } else if primary && !stroke_dismissal && !crate::compact::blocked(app) && temporary.is_none() && !middle && crate::layer_picker::armed(app).is_some() {
         layer_picker_eyedropper(app, ui, &ctx, &response, &xf);
-    } else if primary && !stroke_dismissal {
+    } else if primary && !stroke_dismissal && !crate::compact::blocked(app) {
         let input = CanvasToolInput {
             ctx: &ctx,
             response: &response,
