@@ -17,7 +17,7 @@ use super::*;
 #[test]
 fn aca_mobile_export_options_scroll_settings_and_pin_reachable_actions_without_document_changes() {
     use egui_kittest::Harness;
-    use egui_kittest::kittest::{NodeT, Queryable};
+    use egui_kittest::kittest::Queryable;
 
     for size in [egui::vec2(390.0, 747.0), egui::vec2(844.0, 293.0), egui::vec2(320.0, 420.0), egui::vec2(390.0, 220.0)] {
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());

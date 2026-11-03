@@ -905,7 +905,7 @@ pub(crate) fn compact_dialog(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut
         .auto_shrink([false, false])
         .show(&mut content, |ui| body(app, ui, f));
     // Actual ScrollArea geometry supports native regression checks without exposing artwork.
-    ui.ctx().data_mut(|m| m.insert_temp(id.with("compact-export-scroll"), (scroll.inner_rect, scroll.content_size, scroll.state.offset)));
+    ui.ctx().data_mut(|m| m.insert_temp(id.with("compact-export-scroll"), (scroll.inner_rect, scroll.content_size, scroll.state.offset())));
     let mut buttons = ui.new_child(egui::UiBuilder::new().max_rect(footer).layout(egui::Layout::left_to_right(egui::Align::Center)));
     buttons.set_clip_rect(ui.clip_rect().intersect(footer));
     let mac = ui.ctx().os() == egui::os::OperatingSystem::Mac;
