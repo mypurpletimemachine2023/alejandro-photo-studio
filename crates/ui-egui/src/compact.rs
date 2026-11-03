@@ -185,7 +185,7 @@ pub(crate) fn show(app: &mut PhotocraftApp, ui: &mut Ui) {
                     app.compact.drawer = Some(Drawer::New);
                     ui.close();
                 }
-                for (label, id) in [("Open…", "file.open"), ("Save project", "file.save"), ("Save as…", "file.saveAs"), ("Export…", "file.export.exportAs")]
+                for (label, id) in [("Open…", "file.open"), ("Save project", "file.save"), ("Save as…", "file.saveAs"), ("Export PNG", "file.export.quickExportAsPng"), ("Export options…", "file.export.exportAs")]
                 {
                     if ui.button(label).clicked() {
                         command(app, &ctx, id);
