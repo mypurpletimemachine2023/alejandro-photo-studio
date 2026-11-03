@@ -179,9 +179,7 @@ pub(crate) fn show(app: &mut PhotocraftApp, ui: &mut Ui) {
         touch_style(ui);
         ui.horizontal(|ui| {
             // MenuButton ignores interact_size.x; Save/Open still need a real 44pt target.
-            let file = ui.add(egui::Button::new("File").min_size(vec2(44.0, 44.0)));
-            app.compact.controls.push(("file", [file.rect.left(), file.rect.top(), file.rect.width(), file.rect.height()]));
-            egui::Popup::menu(&file).show(|ui| {
+            let (file, _) = egui::containers::menu::MenuButton::from_button(egui::Button::new("File").min_size(vec2(44.0, 44.0))).ui(ui, |ui| {
                 touch_style(ui);
                 if ui.button("New image…").clicked() {
                     app.compact.new_size = [512, 512];
@@ -201,6 +199,7 @@ pub(crate) fn show(app: &mut PhotocraftApp, ui: &mut Ui) {
                     }
                 }
             });
+            app.compact.controls.push(("file", [file.rect.left(), file.rect.top(), file.rect.width(), file.rect.height()]));
             if button(app, ui, "tools", "Tools", false) {
                 app.compact.drawer = Some(Drawer::Tools);
             }
