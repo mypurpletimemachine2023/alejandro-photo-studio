@@ -178,7 +178,10 @@ pub(crate) fn show(app: &mut PhotocraftApp, ui: &mut Ui) {
     egui::Panel::top("aca-photo-compact-bar").frame(egui::Frame::NONE.fill(t.chrome).inner_margin(4)).show(ui, |ui| {
         touch_style(ui);
         ui.horizontal(|ui| {
-            ui.menu_button("File", |ui| {
+            // MenuButton ignores interact_size.x; Save/Open still need a real 44pt target.
+            let file = ui.add(egui::Button::new("File").min_size(vec2(44.0, 44.0)));
+            app.compact.controls.push(("file", [file.rect.left(), file.rect.top(), file.rect.width(), file.rect.height()]));
+            egui::Popup::menu(&file).show(|ui| {
                 touch_style(ui);
                 if ui.button("New image…").clicked() {
                     app.compact.new_size = [512, 512];
@@ -389,6 +392,7 @@ mod tests {
             });
             output.textures_delta.clear();
             assert!(app.compact.active);
+            assert!(app.compact.controls.iter().any(|(id, _)| *id == "file"), "Save/Open File target must be measured");
             for (id, [x, y, width, height]) in &app.compact.controls {
                 assert!(*width >= 44.0 && *height >= 44.0, "{id}: {width}x{height}");
                 assert!(*x >= 0.0 && *y >= 0.0 && x + width <= w + 1.0 && y + height <= h + 1.0, "{id} outside {w}x{h}");
