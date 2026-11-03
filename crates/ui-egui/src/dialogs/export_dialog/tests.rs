@@ -14,6 +14,67 @@ fn ico_export_is_available_and_rejects_oversize_output() {
 
 use super::*;
 
+#[test]
+fn aca_mobile_export_options_scroll_settings_and_pin_reachable_actions_without_document_changes() {
+    use egui_kittest::Harness;
+    use egui_kittest::kittest::{NodeT, Queryable};
+
+    for size in [egui::vec2(390.0, 747.0), egui::vec2(844.0, 293.0), egui::vec2(320.0, 420.0), egui::vec2(390.0, 220.0)] {
+        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        app.run("file.new", json!({"width": 32, "height": 24})).unwrap();
+        app.initialize_compact_layout(Some("compact"));
+        app.compact.active = true;
+        let document = app.session.active().unwrap().doc.clone();
+        let revision = app.session.active().unwrap().revision;
+        let dock = serde_json::to_value(&app.ui.dock).unwrap();
+        let mut h = Harness::builder().with_size(size).build_ui_state(|ui, app| crate::dialogs::show(app, ui.ctx()), app);
+        PhotocraftApp::setup_context(&h.ctx, h.state().ui.theme);
+        let id = open(h.state_mut()).unwrap();
+        h.run_steps(4);
+        let viewport = h.ctx.content_rect();
+        let window = h.ctx.memory(|m| m.area_rect(egui::Id::unique(("dialog", id)))).unwrap();
+        assert!(viewport.contains_rect(window), "dialog fits {size:?}: {window:?}");
+        let export = h.get_by_label("Export").rect();
+        let cancel = h.get_by_label("Cancel").rect();
+        for button in [export, cancel] {
+            assert!(viewport.contains_rect(button), "actions stay inside {size:?}: {button:?}");
+            assert!(button.width() >= 44.0 && button.height() >= 44.0);
+        }
+        let key = egui::Id::unique(("dialog", id)).with("compact-export-scroll");
+        let (scroll, content, before) = h.ctx.data(|m| m.get_temp::<(egui::Rect, egui::Vec2, egui::Vec2)>(key)).unwrap();
+        assert!(content.y > scroll.height(), "long settings are scrollable at {size:?}");
+        h.event(egui::Event::PointerMoved(scroll.center()));
+        h.event(egui::Event::MouseWheel {
+            source: egui::MouseWheelSource::Unknown,
+            unit: egui::MouseWheelUnit::Point,
+            delta: egui::vec2(0.0, -3000.0),
+            phase: egui::TouchPhase::Move,
+            modifiers: egui::Modifiers::NONE,
+        });
+        h.run_steps(8);
+        let (_, _, after) = h.ctx.data(|m| m.get_temp::<(egui::Rect, egui::Vec2, egui::Vec2)>(key)).unwrap();
+        assert!(after.y > before.y, "real wheel input scrolls the settings");
+        assert_eq!(h.get_by_label("Export").rect(), export, "Export does not scroll away");
+        assert_eq!(h.get_by_label("Cancel").rect(), cancel, "Cancel does not scroll away");
+        assert!(Arc::ptr_eq(&h.state().session.active().unwrap().doc, &document));
+        assert_eq!(h.state().session.active().unwrap().revision, revision);
+        assert_eq!(serde_json::to_value(&h.state().ui.dock).unwrap(), dock);
+        h.get_by_label("Cancel").click();
+        h.run_steps(2);
+        assert!(h.state().ui.dialogs.is_empty());
+    }
+
+    let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+    app.run("file.new", json!({"width": 32, "height": 24})).unwrap();
+    let mut desktop = Harness::builder().with_size(egui::vec2(1200.0, 900.0)).build_ui_state(|ui, app| crate::dialogs::show(app, ui.ctx()), app);
+    PhotocraftApp::setup_context(&desktop.ctx, desktop.state().ui.theme);
+    let id = open(desktop.state_mut()).unwrap();
+    desktop.run_steps(4);
+    let window = desktop.ctx.memory(|m| m.area_rect(egui::Id::unique(("dialog", id)))).unwrap();
+    assert!(window.width() > 500.0, "desktop keeps its two-column export dialog");
+    assert!(desktop.get_by_label("Export").rect().height() < 44.0, "desktop retains its normal native button sizing");
+}
+
 fn default_export_document(doc: &Document, f: &Map<String, Value>, max_side: Option<u32>) -> Result<Document, String> {
     super::export_document(doc, f, max_side, &photocraft_engine::color_cmds::document_profile(doc))
 }

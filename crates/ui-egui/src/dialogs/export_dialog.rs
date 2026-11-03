@@ -888,14 +888,51 @@ fn preset_fields(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String,
     }
 }
 
+/// Compact presentation uses the same fields, body and confirmation path as desktop. Only
+/// the settings/preview scroll; the two exit actions stay above the viewport/keyboard edge.
+pub(crate) fn compact_dialog(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Value>, id: egui::Id, interactive: bool) -> Option<bool> {
+    let t = Tokens::get(ui.ctx());
+    let bounds = ui.max_rect();
+    ui.label(egui::RichText::new(tl!("Export As")).font(crate::theme::semibold(15.0)));
+    crate::widgets::hairline(ui);
+    let footer = egui::Rect::from_min_max(egui::pos2(bounds.left(), bounds.bottom() - 44.0), bounds.max);
+    let body_rect = egui::Rect::from_min_max(ui.cursor().min, egui::pos2(bounds.right(), (footer.top() - 8.0).max(ui.cursor().top())));
+    let mut content = ui.new_child(egui::UiBuilder::new().max_rect(body_rect).layout(egui::Layout::top_down(egui::Align::Min)));
+    content.set_clip_rect(ui.clip_rect().intersect(body_rect));
+    let scroll = egui::ScrollArea::vertical()
+        .id_salt(id.with("compact-export-settings"))
+        .max_height(body_rect.height())
+        .auto_shrink([false, false])
+        .show(&mut content, |ui| body(app, ui, f));
+    // Actual ScrollArea geometry supports native regression checks without exposing artwork.
+    ui.ctx().data_mut(|m| m.insert_temp(id.with("compact-export-scroll"), (scroll.inner_rect, scroll.content_size, scroll.state.offset)));
+    let mut buttons = ui.new_child(egui::UiBuilder::new().max_rect(footer).layout(egui::Layout::left_to_right(egui::Align::Center)));
+    buttons.set_clip_rect(ui.clip_rect().intersect(footer));
+    let mac = ui.ctx().os() == egui::os::OperatingSystem::Mac;
+    let actions = if mac { [(tl!("Cancel"), false), (tl!("Export"), true)] } else { [(tl!("Export"), true), (tl!("Cancel"), false)] };
+    let mut outcome = None;
+    for (label, confirm) in actions {
+        let button = if confirm { egui::Button::new(egui::RichText::new(label).color(t.primary_text)).fill(t.primary_bg) } else { egui::Button::new(label) };
+        if buttons.add_sized(egui::vec2(100.0, 44.0), button).clicked() && interactive {
+            outcome = Some(confirm);
+        }
+    }
+    if interactive && outcome.is_none() && !egui::Popup::is_any_open(ui.ctx()) && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+        outcome = Some(true);
+    }
+    outcome
+}
+
 pub fn body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Value>) {
     let t = Tokens::get(ui.ctx());
     let Some(doc) = app.session.active().map(|s| s.doc.clone()) else { return };
     let source_profile = effective_source_profile(app, &doc);
-    ui.horizontal_top(|ui| {
-        // Left: settings.
+    let compact = app.compact.active;
+    let width = ui.available_width();
+    let contents = |ui: &mut egui::Ui| {
+        // Desktop columns become one scrollable column in the compact dialog.
         ui.vertical(|ui| {
-            ui.set_width(248.0);
+            ui.set_width(if compact { width } else { 248.0 });
             ui.label(egui::RichText::new(tl!("File Settings")).font(crate::theme::semibold(12.0)).color(t.text));
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new(tl!("Format")).color(t.text_dim));
@@ -1008,7 +1045,7 @@ pub fn body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Valu
                     result.map(|result| cache_preview(ui, key, sig.clone(), result, filter))
                 }
             };
-            let side = 300.0;
+            let side = if compact { width.min(300.0).max(1.0) } else { 300.0 };
             let (r, _) = ui.allocate_exact_size(egui::vec2(side, side), egui::Sense::hover());
             crate::widgets::checker(ui.painter(), r, 8.0);
             if let Some(tex) = preview.as_ref().and_then(|preview| preview.texture.as_ref()) {
@@ -1030,7 +1067,12 @@ pub fn body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Valu
                 exact.or_else(|| preview.as_ref().and_then(|preview| preview.estimate)).map_or("—".to_string(), |b| crate::sizing::human_bytes(b as f64));
             ui.label(egui::RichText::new(format!("{}  ≈ {est}", s_fmt(f).to_uppercase())).color(t.text_dim).size(11.5));
         });
-    });
+    };
+    if compact {
+        ui.vertical(contents);
+    } else {
+        ui.horizontal_top(contents);
+    }
 }
 
 /// Export with the dialog's settings: choose a path, render, encode, write.

@@ -567,7 +567,8 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
         let mut drag = egui::Vec2::ZERO;
         let mut close_clicked = false;
         let mut sizing = false;
-        let area = match start {
+        let mobile_export = app.compact.active && fields.contains_key("__export");
+        let area = match start.filter(|_| !mobile_export) {
             Some(offset) => egui::Modal::default_area(id).anchor(egui::Align2::LEFT_TOP, offset),
             None => egui::Modal::default_area(id),
         };
@@ -597,12 +598,26 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
             (remembered.unwrap_or(size), min, resizable_max(ctx, &fields, min))
         });
         let mut given = None;
-        let fixed = (d.kind == DialogKind::LayerStyle)
-            .then(|| egui::vec2(800.0, 550.0).min((ctx.content_rect().size() - egui::vec2(40.0, 40.0)).max(egui::vec2(640.0, 360.0))));
+        let fixed = if mobile_export {
+            let room = (ctx.content_rect().size() - egui::vec2(32.0, 32.0)).max(egui::vec2(1.0, 1.0));
+            Some(egui::vec2(room.x.min(560.0), room.y))
+        } else {
+            (d.kind == DialogKind::LayerStyle)
+                .then(|| egui::vec2(800.0, 550.0).min((ctx.content_rect().size() - egui::vec2(40.0, 40.0)).max(egui::vec2(640.0, 360.0))))
+        };
         let modal = show_modal(modal, ctx, id, resize, fixed, interactive, |ui| {
             sizing = ui.is_sizing_pass();
             let available = ui.available_size();
             given = Some(available);
+            if mobile_export {
+                // Runtime projection only: keep desktop width/position and the export pipeline.
+                ui.set_min_size(available);
+                ui.set_max_size(available);
+                crate::field_tab::begin(ui.ctx());
+                outcome = crate::export_dialog::compact_dialog(app, ui, &mut fields, id, interactive);
+                crate::field_tab::end(ui.ctx(), tab);
+                return ui.min_rect().expand(ui.spacing().menu_margin.sum().max_elem() + 2.0);
+            }
             // A dialog of a few short fields (`__compact`, Fit Image) is narrower (#4673): the title
             // rule and the button row fill the width they are given, so it needs its own maximum too.
             let compact = d.fields.contains_key("__compact");
@@ -704,7 +719,7 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
             ctx.data_mut(|m| m.insert_persisted(size_id(place), size));
         }
         // Pin once laid out at its real size (the first frame is an invisible sizing pass).
-        if !sizing && (web || fixed.is_some() || pinned.is_none() || drag != egui::Vec2::ZERO) {
+        if !sizing && !mobile_export && (web || fixed.is_some() || pinned.is_none() || drag != egui::Vec2::ZERO) {
             let screen = ctx.content_rect();
             // Keep the whole dialog (and so its title bar) on screen.
             let room = (screen.size() - modal.response.rect.size()).max(egui::Vec2::ZERO);
