@@ -281,10 +281,10 @@ pub(crate) fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
             ));
         }
         for (choice, label) in [
-            (Editor::VectorCraft, "VectorCraft"),
+            (Editor::VectorCraft, "ACA Vector Lab"),
             (Editor::Illustrator, "Adobe Illustrator"),
             (Editor::Program, "Other application"),
-            (Editor::Internal, "PhotoCraft (internal editor)"),
+            (Editor::Internal, "ACA Photo Lab (internal editor)"),
         ] {
             // The desktop shell discovers Illustrator installations only on Windows and macOS.
             if choice == Editor::Illustrator && !cfg!(any(windows, target_os = "macos")) {
@@ -303,9 +303,9 @@ pub(crate) fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
         ui.add_space(8.0);
         ui.label(
             egui::RichText::new(tr(if pending.target.extension == "svg" {
-                "Save to the opened SVG file. Each saved change becomes one undo step in PhotoCraft."
+                "Save to the opened SVG file. Each saved change becomes one undo step in ACA Photo Lab."
             } else {
-                "Save to the opened original-format file. Each saved change becomes one undo step in PhotoCraft."
+                "Save to the opened original-format file. Each saved change becomes one undo step in ACA Photo Lab."
             }))
             .small()
             .color(tokens.text_dim),

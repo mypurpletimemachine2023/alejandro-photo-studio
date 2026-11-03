@@ -153,7 +153,7 @@ fn the_title_bar_promotes_no_community_chat() {
         let mut w = Win::new(width);
         w.frame(vec![]);
         let out = w.frame(vec![]);
-        assert!(!texts(&out).iter().any(|(t, _)| t.contains("Discord")), "no Discord in the bar at {width}");
+        assert!(!texts(&out).iter().any(|(t, _)| t.contains("App tutorial")), "App tutorial");
     }
 }
 

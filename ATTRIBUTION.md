@@ -155,3 +155,5 @@ Shape Tools changes from that branch are not included.
 |---|---|---|---|---|
 | `apps/photocraft-web/aca-mark.svg` | Alejandro Creative Academy | Original geometric crown/A mark authored for this fork | MIT OR Apache-2.0 | Replaces upstream product icon; no ArtCraft trademark logo used |
 | `crates/ui-egui/src/panels/brand.rs` | Alejandro Creative Academy | Original procedural crown/A pixel mark | MIT OR Apache-2.0 | Application chrome and About mark |
+
+| `apps/photocraft-web/academy-bridge.js` | Academy appearance and tutorial bridge | Alejandro Creative Academy | Original source | MIT OR Apache-2.0 |

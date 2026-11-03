@@ -52,3 +52,6 @@ mod tests {
         assert!(!html.contains("<script"), "trunk injects the generated loader; the page has no script of its own");
     }
 }
+
+#[cfg(target_arch = "wasm32")]
+mod academy;

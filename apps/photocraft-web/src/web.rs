@@ -110,7 +110,7 @@ pub fn start() {
         if let Some(el) = document.get_element_by_id("photocraft_loading") {
             match result {
                 Ok(()) => el.remove(),
-                Err(e) => el.set_inner_html(&format!("<p>ACA Photo Studio failed to start: {e:?}</p><p>A browser with WebGPU or WebGL2 is required.</p>")),
+                Err(e) => el.set_inner_html(&format!("<p>ACA Photo Lab failed to start: {e:?}</p><p>A browser with WebGPU or WebGL2 is required.</p>")),
             }
         }
     });
@@ -347,6 +347,10 @@ impl eframe::App for WebShell {
     }
 
     fn logic(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        crate::academy::attach(ctx);
+        if let Some(light) = crate::academy::take() {
+            self.app.set_theme(ctx, if light { ThemeKind::StudioLight } else { ThemeKind::Academy });
+        }
         let dropped = ctx.input_mut(|i| std::mem::take(&mut i.raw.dropped_files));
         if !dropped.is_empty() {
             let names: Vec<String> =
@@ -456,7 +460,7 @@ fn services(inbox: Inbox, place_inbox: Inbox, cursor_pos: photocraft_ui_egui::Cu
                     .and_then(|window| {
                         window
                             .prompt_with_message_and_default(
-                                "ACA Photo Studio — Save project filename (.pcraft keeps editable project data; other supported extensions are allowed)",
+                                "ACA Photo Lab — Save project filename (.pcraft keeps editable project data; other supported extensions are allowed)",
                                 &name,
                             )
                             .map_err(|error| format!("The browser could not show the filename prompt: {error:?}"))
